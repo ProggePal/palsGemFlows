@@ -13,11 +13,13 @@ type Step struct {
 	ID           string `yaml:"id"`
 	Type         string `yaml:"type"`
 	Prompt       string `yaml:"prompt"`
+	Multiline    bool   `yaml:"multiline"`
 	UserPrompt   string `yaml:"user_prompt"`
 	SystemPrompt string `yaml:"system_prompt"`
 	Model        string `yaml:"model"`
 	Filename     string `yaml:"filename"`
 	Content      string `yaml:"content"`
+	ParallelGroup string `yaml:"parallel_group"`
 }
 
 type Workflow struct {

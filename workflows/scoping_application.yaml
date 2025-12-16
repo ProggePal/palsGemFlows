@@ -1,0 +1,113 @@
+name: "Scoping an Application"
+description: "Takes a meeting transcript and produces a tight scoping specsheet (UI, Technical, Business/Sales)."
+
+steps:
+  - id: transcript
+    type: input
+    multiline: true
+    prompt: "Paste the meeting transcript below. End with Ctrl-D (EOF):"
+
+  - id: ui_analysis
+    type: gemini
+    parallel_group: analyze
+    model: "gemini-2.5-flash"
+    system_prompt: "You are a senior product designer. Extract UI/UX requirements precisely and avoid fluff."
+    user_prompt: |
+      From this meeting transcript, extract ONLY the UI/UX-relevant scoping information.
+
+      Output format:
+      - Key user roles
+      - Primary user journeys
+      - Screens/views needed (with purpose)
+      - UI components/inputs (forms, tables, uploads, etc.)
+      - Edge cases / error states
+      - Open questions (bulleted)
+
+      Transcript:
+      {{ transcript }}
+
+  - id: technical_analysis
+    type: gemini
+    parallel_group: analyze
+    model: "gemini-2.5-flash"
+    system_prompt: "You are a pragmatic staff engineer. Extract technical scope, integrations, risks, and data concerns."
+    user_prompt: |
+      From this meeting transcript, extract ONLY the technical scoping information.
+
+      Output format:
+      - Data entities and key fields
+      - Integrations/APIs (systems mentioned, direction of data flow)
+      - Non-functional requirements (security, auth, performance, audit logs)
+      - Risks/unknowns
+      - Assumptions
+      - Open questions (bulleted)
+
+      Transcript:
+      {{ transcript }}
+
+  - id: business_sales_analysis
+    type: gemini
+    parallel_group: analyze
+    model: "gemini-2.5-flash"
+    system_prompt: "You are a product manager with a sales mindset. Extract business goals, value, success metrics, and constraints."
+    user_prompt: |
+      From this meeting transcript, extract ONLY the business/sales scoping information.
+
+      Output format:
+      - Problem statement
+      - Business goals and value hypothesis
+      - Target users / customers
+      - Success metrics (how we know it works)
+      - Scope boundaries (in-scope / out-of-scope)
+      - Rollout considerations (stakeholders, adoption)
+      - Open questions (bulleted)
+
+      Transcript:
+      {{ transcript }}
+
+  - id: specsheet
+    type: gemini
+    model: "gemini-2.5-flash"
+    system_prompt: "You are an expert product lead. Combine inputs into an extremely tight, concrete application scoping spec. No filler."
+    user_prompt: |
+      Create a super tight scoping specsheet for the application based on:
+      - UI analysis
+      - Technical analysis
+      - Business/Sales analysis
+
+      Requirements:
+      - Be concrete and implementation-oriented.
+      - Prefer bullet points and short sentences.
+      - If something is unclear, list it as an open question instead of guessing.
+
+      Include these sections:
+      1) One-liner summary
+      2) Goals (business)
+      3) Users & roles
+      4) In-scope / Out-of-scope
+      5) User journeys
+      6) Screens & UI notes
+      7) Data model (entities + key fields)
+      8) Integrations
+      9) Non-functional requirements
+      10) Risks & assumptions
+      11) Open questions
+      12) MVP milestones (3-6 steps)
+
+      UI analysis:
+      {{ ui_analysis }}
+
+      Technical analysis:
+      {{ technical_analysis }}
+
+      Business/Sales analysis:
+      {{ business_sales_analysis }}
+
+  - id: save_specsheet
+    type: save
+    filename: "specsheet.md"
+    content: "{{ specsheet }}"
+
+  - id: copy_specsheet
+    type: clipboard
+    content: "{{ specsheet }}"

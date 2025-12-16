@@ -19,10 +19,15 @@ go run ./cmd/my-tool run grammar_fix
 
 ## Step types
 
-- `input`: prompts the user and reads one line from stdin.
+- `input`: prompts the user and reads input from stdin.
 - `gemini`: calls Gemini (Google GenAI) using `GEMINI_API_KEY`.
 - `save`: writes a file to disk.
 - `clipboard`: copies `content` to your system clipboard.
+
+Optional step fields:
+
+- `multiline: true` (only for `input`): reads until EOF (Ctrl-D on macOS/Linux).
+- `parallel_group: <name>`: consecutive `gemini` steps with the same `parallel_group` run concurrently.
 
 Example:
 

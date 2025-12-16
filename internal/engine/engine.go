@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"cli-gpt-flows/internal/analytics"
@@ -34,48 +35,139 @@ func New(deps Dependencies) *Engine {
 func (e *Engine) Run(ctx context.Context, wf workflow.Workflow) error {
 	memory := map[string]string{}
 
-	for _, raw := range wf.Steps {
+	for i := 0; i < len(wf.Steps); {
+		raw := wf.Steps[i]
+		if raw.ParallelGroup != "" {
+			group := raw.ParallelGroup
+			j := i
+			for j < len(wf.Steps) && wf.Steps[j].ParallelGroup == group {
+				j++
+			}
+			if err := e.runParallelGroup(ctx, wf, wf.Steps[i:j], memory); err != nil {
+				return err
+			}
+			i = j
+			continue
+		}
+
 		step, err := renderStep(raw, memory)
 		if err != nil {
 			return fmt.Errorf("render step %s: %w", raw.ID, err)
 		}
 
-		fmt.Printf("==> step %s (%s)\n", step.ID, step.Type)
-		start := time.Now()
-
-		var out string
-		switch step.Type {
-		case "input":
-			out, err = runInput(step.Prompt)
-		case "gemini":
-			if e.deps.Gemini == nil {
-				err = errors.New("gemini client is not configured")
-				break
-			}
-			out, err = e.deps.Gemini.Generate(ctx, step.Model, step.SystemPrompt, step.UserPrompt)
-		case "save":
-			out, err = runSave(step.Filename, step.Content)
-		case "clipboard":
-			out, err = runClipboard(step.Content)
-		default:
-			err = fmt.Errorf("unsupported step type: %s", step.Type)
-		}
-
-		durationMs := time.Since(start).Milliseconds()
+		out, durationMs, err := e.executeStep(ctx, step)
 		if err != nil {
 			return fmt.Errorf("step %s failed: %w", step.ID, err)
 		}
 
 		memory[step.ID] = out
-
 		if e.deps.Analytics != nil {
 			e.deps.Analytics.StepCompleted(wf.Name, step.ID, step.Type, durationMs)
 		}
-
-		fmt.Printf("<== completed %s in %dms\n\n", step.ID, durationMs)
+		i++
 	}
 
 	return nil
+}
+
+func (e *Engine) runParallelGroup(ctx context.Context, wf workflow.Workflow, raws []workflow.Step, memory map[string]string) error {
+	if len(raws) == 0 {
+		return nil
+	}
+	group := raws[0].ParallelGroup
+	fmt.Printf("==> parallel group %q (%d steps)\n", group, len(raws))
+
+	steps := make([]workflow.Step, 0, len(raws))
+	for _, raw := range raws {
+		if raw.Type != "gemini" {
+			return fmt.Errorf("parallel_group %q only supports gemini steps for now (got %s for %s)", group, raw.Type, raw.ID)
+		}
+		step, err := renderStep(raw, memory)
+		if err != nil {
+			return fmt.Errorf("render step %s: %w", raw.ID, err)
+		}
+		steps = append(steps, step)
+	}
+
+	childCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	type result struct {
+		id         string
+		stepType   string
+		out        string
+		durationMs int64
+		err        error
+	}
+
+	results := make(chan result, len(steps))
+	var wg sync.WaitGroup
+	for _, step := range steps {
+		step := step
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			out, durationMs, err := e.executeStep(childCtx, step)
+			if err != nil {
+				cancel()
+			}
+			results <- result{id: step.ID, stepType: step.Type, out: out, durationMs: durationMs, err: err}
+		}()
+	}
+
+	wg.Wait()
+	close(results)
+
+	for r := range results {
+		if r.err != nil {
+			return fmt.Errorf("step %s failed: %w", r.id, r.err)
+		}
+		memory[r.id] = r.out
+		if e.deps.Analytics != nil {
+			e.deps.Analytics.StepCompleted(wf.Name, r.id, r.stepType, r.durationMs)
+		}
+	}
+
+	fmt.Printf("<== completed parallel group %q\n\n", group)
+	return nil
+}
+
+func (e *Engine) executeStep(ctx context.Context, step workflow.Step) (string, int64, error) {
+	fmt.Printf("==> step %s (%s)\n", step.ID, step.Type)
+	start := time.Now()
+
+	var (
+		out string
+		err error
+	)
+	switch step.Type {
+	case "input":
+		if step.Multiline {
+			out, err = runInputMultiline(step.Prompt)
+		} else {
+			out, err = runInput(step.Prompt)
+		}
+	case "gemini":
+		if e.deps.Gemini == nil {
+			err = errors.New("gemini client is not configured")
+			break
+		}
+		out, err = e.deps.Gemini.Generate(ctx, step.Model, step.SystemPrompt, step.UserPrompt)
+	case "save":
+		out, err = runSave(step.Filename, step.Content)
+	case "clipboard":
+		out, err = runClipboard(step.Content)
+	default:
+		err = fmt.Errorf("unsupported step type: %s", step.Type)
+	}
+
+	durationMs := time.Since(start).Milliseconds()
+	if err != nil {
+		return "", durationMs, err
+	}
+
+	fmt.Printf("<== completed %s in %dms\n\n", step.ID, durationMs)
+	return out, durationMs, nil
 }
 
 func renderStep(step workflow.Step, memory map[string]string) (workflow.Step, error) {
@@ -125,6 +217,20 @@ func runInput(prompt string) (string, error) {
 
 	line = strings.TrimRight(line, "\r\n")
 	return line, nil
+}
+
+func runInputMultiline(prompt string) (string, error) {
+	if prompt == "" {
+		prompt = "Paste input (end with Ctrl-D):"
+	}
+	fmt.Printf("%s\n", prompt)
+
+	b, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", err
+	}
+	text := strings.TrimRight(string(b), "\r\n")
+	return text, nil
 }
 
 func runSave(filename string, content string) (string, error) {
