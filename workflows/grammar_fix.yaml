@@ -1,0 +1,18 @@
+name: "Grammar Fixer"
+description: "Fixes grammar using Gemini"
+
+steps:
+  - id: user_input
+    type: input
+    prompt: "Please paste your text:"
+
+  - id: ai_process
+    type: gemini
+    model: "gemini-2.5-flash"
+    user_prompt: "Fix the grammar of this text: {{ user_input }}"
+    system_prompt: "You are a professional editor."
+
+  - id: save_result
+    type: save
+    filename: "fixed_output.txt"
+    content: "{{ ai_process }}"
