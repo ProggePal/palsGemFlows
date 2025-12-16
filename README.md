@@ -53,12 +53,12 @@ steps:
 
 	- id: draft_email
 		type: gemini
-		model: "gemini-1.5-flash"
+		model: "gemini-2.5-flash"
 		user_prompt: "Write a professional email about {{ get_topic }}."
 
 	- id: polish_email
 		type: gemini
-		model: "gemini-1.5-flash"
+		model: "gemini-2.5-flash"
 		user_prompt: "Make this more friendly: {{ draft_email }}"
 ```
 
