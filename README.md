@@ -13,6 +13,12 @@ export POSTHOG_API_KEY="..."  # optional
 go run ./cmd/my-tool run grammar_fix
 ```
 
+You can also point to a different workflows folder:
+
+```bash
+go run ./cmd/my-tool run --workflows-dir /path/to/workflows grammar_fix
+```
+
 ## Workflow location
 
 - `workflows/<name>.yaml` or `workflows/<name>.yml`
@@ -32,9 +38,9 @@ Optional step fields:
 Example:
 
 ```yaml
-	- id: copy_result
-		type: clipboard
-		content: "{{ ai_process }}"
+  - id: copy_result
+    type: clipboard
+    content: "{{ ai_process }}"
 ```
 
 ## Templating (Memory & Injection)
@@ -47,22 +53,38 @@ Example:
 
 ```yaml
 steps:
-	- id: get_topic
-		type: input
-		prompt: "What topic?"
+  - id: get_topic
+    type: input
+    prompt: "What topic?"
 
-	- id: draft_email
-		type: gemini
-		model: "gemini-2.5-flash"
-		user_prompt: "Write a professional email about {{ get_topic }}."
+  - id: draft_email
+    type: gemini
+    model: "gemini-1.5-flash"
+    user_prompt: "Write a professional email about {{ get_topic }}."
 
-	- id: polish_email
-		type: gemini
-		model: "gemini-2.5-flash"
-		user_prompt: "Make this more friendly: {{ draft_email }}"
+  - id: polish_email
+    type: gemini
+    model: "gemini-1.5-flash"
+    user_prompt: "Make this more friendly: {{ draft_email }}"
 ```
 
 ## Analytics
 
 If `POSTHOG_API_KEY` is set, the engine emits `step_completed` after each step with:
 - `workflow_name`, `step_id`, `step_type`, `duration_ms`, `user_machine`
+
+## Sharing with colleagues
+
+Create a zip bundle containing the runtime + docs + example workflows:
+
+```bash
+make release
+```
+
+Share the generated zip in `dist/`. Your colleague can unzip, set env vars (see `.env.example`), and run:
+
+```bash
+./my-tool run grammar_fix
+```
+
+Workflow authoring guide: [docs/WORKFLOWS.md](docs/WORKFLOWS.md)
