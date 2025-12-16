@@ -21,8 +21,9 @@ type Step struct {
 }
 
 type Workflow struct {
-	Name  string `yaml:"name"`
-	Steps []Step `yaml:"steps"`
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	Steps       []Step `yaml:"steps"`
 }
 
 func LoadFromWorkflowsDir(dir string, key string) (Workflow, error) {

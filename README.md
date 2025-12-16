@@ -32,6 +32,31 @@ Example:
 		content: "{{ ai_process }}"
 ```
 
+## Templating (Memory & Injection)
+
+Every step stores its output in memory under its `id`. Any later step can reference it using Mustache-style placeholders:
+
+- `{{ step_id }}` or `{{step_id}}`
+
+Example:
+
+```yaml
+steps:
+	- id: get_topic
+		type: input
+		prompt: "What topic?"
+
+	- id: draft_email
+		type: gemini
+		model: "gemini-1.5-flash"
+		user_prompt: "Write a professional email about {{ get_topic }}."
+
+	- id: polish_email
+		type: gemini
+		model: "gemini-1.5-flash"
+		user_prompt: "Make this more friendly: {{ draft_email }}"
+```
+
 ## Analytics
 
 If `POSTHOG_API_KEY` is set, the engine emits `step_completed` after each step with:
