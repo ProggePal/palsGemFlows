@@ -16,3 +16,7 @@ steps:
     type: save
     filename: "fixed_output.txt"
     content: "{{ ai_process }}"
+    
+  - id: copy_result
+    type: clipboard
+    content: "{{ ai_process }}"
