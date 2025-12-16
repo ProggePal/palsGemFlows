@@ -3,8 +3,10 @@ package workflow
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,6 +16,7 @@ type Step struct {
 	Type         string `yaml:"type"`
 	Prompt       string `yaml:"prompt"`
 	Multiline    bool   `yaml:"multiline"`
+	FromClipboard bool  `yaml:"from_clipboard"`
 	UserPrompt   string `yaml:"user_prompt"`
 	SystemPrompt string `yaml:"system_prompt"`
 	Model        string `yaml:"model"`
@@ -68,6 +71,40 @@ func LoadFromFile(path string) (Workflow, error) {
 		return Workflow{}, fmt.Errorf("invalid workflow %s: %w", path, err)
 	}
 	return wf, nil
+}
+
+// ListKeys returns workflow names (file name without extension) found in a directory.
+func ListKeys(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	seen := map[string]struct{}{}
+	var out []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		low := strings.ToLower(name)
+		if !strings.HasSuffix(low, ".yaml") && !strings.HasSuffix(low, ".yml") {
+			continue
+		}
+		base := strings.TrimSuffix(name, filepath.Ext(name))
+		if base == "" {
+			continue
+		}
+		if _, ok := seen[base]; ok {
+			continue
+		}
+		seen[base] = struct{}{}
+		out = append(out, base)
+	}
+	return out, nil
 }
 
 func validateWorkflow(wf Workflow) error {

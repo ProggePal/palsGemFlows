@@ -142,7 +142,9 @@ func (e *Engine) executeStep(ctx context.Context, step workflow.Step) (string, i
 	)
 	switch step.Type {
 	case "input":
-		if step.Multiline {
+		if step.FromClipboard {
+			out, err = runInputFromClipboard(step.Prompt)
+		} else if step.Multiline {
 			out, err = runInputMultiline(step.Prompt)
 		} else {
 			out, err = runInput(step.Prompt)
@@ -231,6 +233,68 @@ func runInputMultiline(prompt string) (string, error) {
 	}
 	text := strings.TrimRight(string(b), "\r\n")
 	return text, nil
+}
+
+func runInputFromClipboard(prompt string) (string, error) {
+	if prompt == "" {
+		prompt = "Copy the text you want to use, then press Enter to read from clipboard:"
+	}
+	fmt.Printf("%s\n", prompt)
+	fmt.Print("Press Enter when ready (or Ctrl-C to cancel): ")
+	reader := bufio.NewReader(os.Stdin)
+	_, _ = reader.ReadString('\n')
+
+	data, err := readClipboard()
+	if err != nil {
+		return "", err
+	}
+	data = strings.TrimRight(data, "\r\n")
+	if strings.TrimSpace(data) == "" {
+		return "", errors.New("clipboard is empty")
+	}
+	return data, nil
+}
+
+func readClipboard() (string, error) {
+	switch runtime.GOOS {
+	case "darwin":
+		out, err := exec.Command("pbpaste").Output()
+		if err != nil {
+			return "", err
+		}
+		return string(out), nil
+	case "windows":
+		// PowerShell is available on modern Windows installations.
+		out, err := exec.Command("powershell", "-NoProfile", "-Command", "Get-Clipboard -Raw").Output()
+		if err != nil {
+			return "", err
+		}
+		return string(out), nil
+	default:
+		// Linux: prefer wl-paste, then xclip, then xsel.
+		if _, err := exec.LookPath("wl-paste"); err == nil {
+			out, err := exec.Command("wl-paste", "-n").Output()
+			if err != nil {
+				return "", err
+			}
+			return string(out), nil
+		}
+		if _, err := exec.LookPath("xclip"); err == nil {
+			out, err := exec.Command("xclip", "-selection", "clipboard", "-o").Output()
+			if err != nil {
+				return "", err
+			}
+			return string(out), nil
+		}
+		if _, err := exec.LookPath("xsel"); err == nil {
+			out, err := exec.Command("xsel", "--clipboard", "--output").Output()
+			if err != nil {
+				return "", err
+			}
+			return string(out), nil
+		}
+		return "", fmt.Errorf("no clipboard helper found (install wl-paste, xclip, or xsel)")
+	}
 }
 
 func runSave(filename string, content string) (string, error) {

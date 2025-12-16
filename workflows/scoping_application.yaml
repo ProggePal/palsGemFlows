@@ -4,8 +4,8 @@ description: "Takes a meeting transcript and produces a tight scoping specsheet 
 steps:
   - id: transcript
     type: input
-    multiline: true
-    prompt: "Paste the meeting transcript below. End with Ctrl-D (EOF):"
+    from_clipboard: true
+    prompt: "Copy the full meeting transcript to your clipboard, then press Enter to continue:"
 
   - id: ui_analysis
     type: gemini

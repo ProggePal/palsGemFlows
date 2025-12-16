@@ -1,22 +1,43 @@
-# CLI GPT Flows (MVP)
+# Pals GemFlows
 
-This repo builds a single Go binary (`my-tool`) that runs YAML workflows from `workflows/`.
+Run pre-made AI workflows from a folder of YAML files.
 
-## Run
+## For humans (quick start)
+
+1) Get the zip bundle from the person who shared it.
+2) Unzip it.
+3) Start it:
+
+- macOS: double-click `Run Pals-GemFlows.command`
+- Or in Terminal:
 
 ```bash
-export GEMINI_API_KEY="..."
-export POSTHOG_API_KEY="..."  # optional
-# Optional override for PostHog cloud region/self-hosted ingest
-# export POSTHOG_ENDPOINT="https://eu.i.posthog.com"
-
-go run ./cmd/my-tool run grammar_fix
+./pals-gemflows run
 ```
 
-You can also point to a different workflows folder:
+It will show a list and you just pick a workflow.
+
+First run: it will ask you for your Gemini API key and can save it for next time.
+
+Then run a workflow (examples are included in the `workflows/` folder):
 
 ```bash
-go run ./cmd/my-tool run --workflows-dir /path/to/workflows grammar_fix
+./pals-gemflows run scoping_application
+```
+
+For very long meeting transcripts: copy the full transcript to your clipboard first.
+The `scoping_application` workflow reads the transcript from your clipboard to avoid terminal paste limits.
+
+If you forget the workflow name, just run `./pals-gemflows` and it will list what's available.
+
+## Technical details (for workflow authors)
+
+The runtime looks for workflows in `./workflows` by default.
+
+You can point to a different folder:
+
+```bash
+./pals-gemflows run --workflows-dir /path/to/workflows scoping_application
 ```
 
 ## Workflow location
@@ -33,6 +54,7 @@ go run ./cmd/my-tool run --workflows-dir /path/to/workflows grammar_fix
 Optional step fields:
 
 - `multiline: true` (only for `input`): reads until EOF (Ctrl-D on macOS/Linux).
+- `from_clipboard: true` (only for `input`): reads the step value from your clipboard (best for long texts).
 - `parallel_group: <name>`: consecutive `gemini` steps with the same `parallel_group` run concurrently.
 
 Example:
@@ -73,18 +95,10 @@ steps:
 If `POSTHOG_API_KEY` is set, the engine emits `step_completed` after each step with:
 - `workflow_name`, `step_id`, `step_type`, `duration_ms`, `user_machine`
 
-## Sharing with colleagues
-
-Create a zip bundle containing the runtime + docs + example workflows:
+## Packaging (for developers)
 
 ```bash
 make release
 ```
 
-Share the generated zip in `dist/`. Your colleague can unzip, set env vars (see `.env.example`), and run:
-
-```bash
-./my-tool run grammar_fix
-```
-
-Workflow authoring guide: [docs/WORKFLOWS.md](docs/WORKFLOWS.md)
+This creates a zip in `dist/` containing the runtime + README + sample workflows.

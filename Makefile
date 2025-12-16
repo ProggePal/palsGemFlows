@@ -1,5 +1,5 @@
 build:
-	go build -o my-tool ./cmd/my-tool
+	go build -o pals-gemflows ./cmd/pals-gemflows
 
 test:
 	go test ./...

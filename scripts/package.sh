@@ -6,19 +6,22 @@ cd "$repo_root"
 
 os="$(go env GOOS)"
 arch="$(go env GOARCH)"
-name="my-tool_${os}_${arch}"
+name="pals-gemflows_${os}_${arch}"
 
 dist_dir="dist/$name"
 rm -rf "$dist_dir"
 mkdir -p "$dist_dir"
 
 # Build binary
-GOOS="$os" GOARCH="$arch" go build -o "$dist_dir/my-tool" ./cmd/my-tool
+GOOS="$os" GOARCH="$arch" go build -o "$dist_dir/pals-gemflows" ./cmd/pals-gemflows
 
-# Bundle docs + example workflows
+# One-click launcher for macOS
+cp "scripts/Run Pals-GemFlows.command" "$dist_dir/Run Pals-GemFlows.command"
+chmod +x "$dist_dir/pals-gemflows" "$dist_dir/Run Pals-GemFlows.command"
+
+# Bundle README + example workflows
 cp README.md "$dist_dir/README.md"
 cp .env.example "$dist_dir/.env.example"
-mkdir -p "$dist_dir/docs" && cp docs/WORKFLOWS.md "$dist_dir/docs/WORKFLOWS.md"
 mkdir -p "$dist_dir/workflows" && cp -R workflows/. "$dist_dir/workflows/"
 
 # Zip it

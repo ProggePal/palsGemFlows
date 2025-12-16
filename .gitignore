@@ -1,5 +1,25 @@
+# Binaries
+pals-gemflows
+pals-gemflows.exe
 my-tool
+my-tool.exe
+
+# Build/test artifacts
+*.test
+*.out
+cover.out
+
+# Distribution bundles
+dist/
+
+# Local outputs produced by example workflows
 fixed_output.txt
 specsheet.md
-dist/
+
+# Local secrets
+.env
+
+# OS/editor noise
 .DS_Store
+.vscode/
+.idea/
