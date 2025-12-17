@@ -99,7 +99,9 @@ This tool separates the **Engine** (the binary) from the **Content** (YAML recip
 
 Remote catalog configuration:
 
-- Set `PALSGEMFLOWS_RECIPES_BASE_URL` to a GitHub Raw base URL that points at your `recipes/` folder.
+- By default, this project fetches from:
+  `https://raw.githubusercontent.com/ProggePal/palsGemFlows/main/workflows/`
+- To use a different catalog, set `PALSGEMFLOWS_RECIPES_BASE_URL` to a GitHub Raw base URL that points at your catalog folder (for this repo, that’s `workflows/`).
   Example:
   `https://raw.githubusercontent.com/MYORG/automation-platform/main/recipes/`
 
@@ -211,3 +213,31 @@ GOOS=windows GOARCH=amd64 ./scripts/package.sh
 GOOS=darwin GOARCH=arm64 ./scripts/package.sh
 GOOS=linux GOARCH=amd64 ./scripts/package.sh
 ```
+
+## Homebrew Tap (recommended distribution)
+
+This lets teammates install/update with Homebrew:
+
+```bash
+brew tap ProggePal/palsgemflows
+brew install pals-gemflows
+```
+
+### Maintainers: how to publish a new version
+
+1) Tag a release in GitHub (example tag: `v0.1.0`).
+2) Build and upload the release assets:
+
+```bash
+VERSION=v0.1.0 ./scripts/build_release_assets.sh
+```
+
+Upload the generated `dist/pals-gemflows_v0.1.0_*.zip` files to the GitHub Release.
+
+3) Generate the Homebrew formula for the tap:
+
+```bash
+VERSION=v0.1.0 ./scripts/generate_homebrew_formula.sh > pals-gemflows.rb
+```
+
+4) In the tap repo, commit it as `Formula/pals-gemflows.rb`.

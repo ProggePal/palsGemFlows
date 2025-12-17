@@ -19,6 +19,10 @@ const (
 	// Example: https://raw.githubusercontent.com/MYORG/automation-platform/main/recipes/
 	EnvRecipesBaseURL = "PALSGEMFLOWS_RECIPES_BASE_URL"
 
+	// DefaultRecipesBaseURL is the default remote catalog for this project.
+	// Override via EnvRecipesBaseURL or the --recipes-base-url flag.
+	DefaultRecipesBaseURL = "https://raw.githubusercontent.com/ProggePal/palsGemFlows/main/workflows/"
+
 	defaultCacheTTL = 1 * time.Hour
 )
 
@@ -63,6 +67,9 @@ func GetRecipeData(ctx context.Context, nameOrPath string, opts Options) (Result
 	baseURL := strings.TrimSpace(opts.BaseURL)
 	if baseURL == "" {
 		baseURL = strings.TrimSpace(os.Getenv(EnvRecipesBaseURL))
+	}
+	if baseURL == "" {
+		baseURL = DefaultRecipesBaseURL
 	}
 	if baseURL == "" {
 		return Result{}, fmt.Errorf("%w: set %s to your GitHub Raw recipes base URL", ErrRemoteNotConfigured, EnvRecipesBaseURL)

@@ -6,7 +6,17 @@ cd "$repo_root"
 
 os="$(go env GOOS)"
 arch="$(go env GOARCH)"
-name="pals-gemflows_${os}_${arch}"
+version="${VERSION:-}"
+
+version_suffix=""
+if [ -n "$version" ]; then
+  case "$version" in
+    v*) version_suffix="_${version}" ;;
+    *)  version_suffix="_v${version}" ;;
+  esac
+fi
+
+name="pals-gemflows${version_suffix}_${os}_${arch}"
 
 dist_dir="dist/$name"
 rm -rf "$dist_dir"
