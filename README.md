@@ -224,11 +224,11 @@ brew install ProggePal/homebrew-palsgemflows/pals-gemflows
 
 ### Maintainers: how to publish a new version
 
-1) Tag a release in GitHub (example tag: `v0.1.0`).
+1) Tag a release in GitHub (example tag: `0.1.0`).
 2) Build and upload the release assets:
 
 ```bash
-VERSION=v0.1.0 ./scripts/build_release_assets.sh
+VERSION=0.1.0 ./scripts/build_release_assets.sh
 ```
 
 Upload the generated `dist/pals-gemflows_v0.1.0_*.zip` files to the GitHub Release.
@@ -236,7 +236,7 @@ Upload the generated `dist/pals-gemflows_v0.1.0_*.zip` files to the GitHub Relea
 3) Generate the Homebrew formula for the tap:
 
 ```bash
-VERSION=v0.1.0 ./scripts/generate_homebrew_formula.sh > pals-gemflows.rb
+VERSION=0.1.0 ./scripts/generate_homebrew_formula.sh > pals-gemflows.rb
 ```
 
 4) In the tap repo, commit it as `Formula/pals-gemflows.rb`.

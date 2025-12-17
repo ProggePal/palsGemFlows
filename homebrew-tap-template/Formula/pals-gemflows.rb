@@ -3,7 +3,7 @@ class PalsGemflows < Formula
   homepage "https://github.com/ProggePal/palsGemFlows"
   version "0.1.0"
 
-  base = "https://github.com/ProggePal/palsGemFlows/releases/download/v0.1.0/"
+  base = "https://github.com/ProggePal/palsGemFlows/releases/download/0.1.0/"
 
   on_macos do
     if Hardware::CPU.arm?

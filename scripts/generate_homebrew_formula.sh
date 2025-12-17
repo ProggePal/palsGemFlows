@@ -21,7 +21,9 @@ fi
 
 repo="ProggePal/palsGemFlows"
 
-tag="$version"
+# GitHub releases for this project use tags without a leading 'v' (e.g. 0.1.0).
+# Accept either VERSION=0.1.0 or VERSION=v0.1.0 and normalize here.
+tag="${version#v}"
 
 # Normalize to 'vX.Y.Z' for filenames used by package.sh
 case "$version" in
