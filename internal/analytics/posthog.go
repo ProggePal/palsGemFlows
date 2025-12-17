@@ -69,3 +69,22 @@ func (c *Client) StepCompleted(workflowName, stepID, stepType string, durationMs
 		Properties: props,
 	})
 }
+
+func (c *Client) WorkflowRun(recipeName string, source string, stepsCount int, durationMs int64) {
+	if c == nil || c.ph == nil {
+		return
+	}
+
+	props := posthog.NewProperties().
+		Set("recipe_name", recipeName).
+		Set("source", source).
+		Set("steps_count", stepsCount).
+		Set("duration_ms", durationMs).
+		Set("user_machine", c.userMachine)
+
+	c.ph.Enqueue(posthog.Capture{
+		DistinctId: c.distinctID,
+		Event:      "workflow_run",
+		Properties: props,
+	})
+}

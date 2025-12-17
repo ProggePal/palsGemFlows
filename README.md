@@ -90,6 +90,29 @@ chmod +x ./pals-gemflows
 
 ## Technical details (for workflow authors)
 
+### Remote recipes vs local dev files
+
+This tool separates the **Engine** (the binary) from the **Content** (YAML recipes).
+
+- Standard mode (remote): run by name (e.g. `marketing/blog_post`) and the tool fetches the YAML from a remote catalog.
+- Dev mode (local): run a local file path (e.g. `./my_test.yaml`) to test changes before publishing.
+
+Remote catalog configuration:
+
+- Set `PALSGEMFLOWS_RECIPES_BASE_URL` to a GitHub Raw base URL that points at your `recipes/` folder.
+  Example:
+  `https://raw.githubusercontent.com/MYORG/automation-platform/main/recipes/`
+
+Examples:
+
+```bash
+# Remote recipe (fetched at runtime)
+./pals-gemflows run marketing/blog_post
+
+# Local file (dev/testing)
+./pals-gemflows run ./my_test.yaml
+```
+
 The runtime looks for workflows in `./workflows` by default.
 
 You can point to a different folder:
@@ -103,6 +126,7 @@ You can point to a different folder:
 Environment variables:
 
 - `GEMINI_API_KEY` (required for `gemini` steps)
+- `PALSGEMFLOWS_RECIPES_BASE_URL` (remote recipe catalog base URL)
 - `PALSGEMFLOWS_WORKFLOWS_DIR` (optional default workflows dir)
 - `POSTHOG_API_KEY` (optional analytics)
 - `POSTHOG_ENDPOINT` (optional; defaults to `https://us.i.posthog.com`)
@@ -110,6 +134,7 @@ Environment variables:
 Flags:
 
 - `--workflows-dir PATH` (overrides the workflows folder)
+- `--recipes-base-url URL` (overrides `PALSGEMFLOWS_RECIPES_BASE_URL` for remote fetch)
 
 First run setup:
 

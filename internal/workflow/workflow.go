@@ -63,12 +63,16 @@ func LoadFromFile(path string) (Workflow, error) {
 		return Workflow{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
+	return LoadFromBytes(path, b)
+}
+
+func LoadFromBytes(name string, b []byte) (Workflow, error) {
 	var wf Workflow
 	if err := yaml.Unmarshal(b, &wf); err != nil {
-		return Workflow{}, fmt.Errorf("parse yaml %s: %w", path, err)
+		return Workflow{}, fmt.Errorf("parse yaml %s: %w", name, err)
 	}
 	if err := validateWorkflow(wf); err != nil {
-		return Workflow{}, fmt.Errorf("invalid workflow %s: %w", path, err)
+		return Workflow{}, fmt.Errorf("invalid workflow %s: %w", name, err)
 	}
 	return wf, nil
 }
