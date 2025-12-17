@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,6 +23,10 @@ const (
 	// DefaultRecipesBaseURL is the default remote catalog for this project.
 	// Override via EnvRecipesBaseURL or the --recipes-base-url flag.
 	DefaultRecipesBaseURL = "https://raw.githubusercontent.com/ProggePal/palsGemFlows/main/workflows/"
+
+	defaultGitHubRepo = "ProggePal/palsGemFlows"
+	defaultGitHubRef  = "main"
+	defaultGitHubDir  = "workflows"
 
 	defaultCacheTTL = 1 * time.Hour
 )
@@ -46,6 +51,74 @@ type Options struct {
 	BaseURL  string
 	CacheTTL time.Duration
 	Client   *http.Client
+}
+
+type RemoteListOptions struct {
+	Client *http.Client
+	Ref    string
+}
+
+// ListRemoteRecipeKeys lists available workflow keys from the default GitHub repo.
+// This is best-effort and intended for interactive UX (not required for running by name).
+func ListRemoteRecipeKeys(ctx context.Context, opts RemoteListOptions) ([]string, error) {
+	ref := strings.TrimSpace(opts.Ref)
+	if ref == "" {
+		ref = defaultGitHubRef
+	}
+
+	client := opts.Client
+	if client == nil {
+		client = &http.Client{Timeout: 15 * time.Second}
+	}
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/contents/%s?ref=%s", defaultGitHubRepo, defaultGitHubDir, ref)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	// GitHub API expects a User-Agent.
+	req.Header.Set("User-Agent", "pals-gemflows")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("list remote recipes failed (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(b)))
+	}
+
+	var entries []struct {
+		Name string `json:"name"`
+		Type string `json:"type"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
+		return nil, err
+	}
+
+	seen := map[string]struct{}{}
+	var out []string
+	for _, e := range entries {
+		if e.Type != "file" {
+			continue
+		}
+		low := strings.ToLower(e.Name)
+		if !strings.HasSuffix(low, ".yaml") && !strings.HasSuffix(low, ".yml") {
+			continue
+		}
+		key := stripYAMLExt(e.Name)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, key)
+	}
+	return out, nil
 }
 
 func GetRecipeData(ctx context.Context, nameOrPath string, opts Options) (Result, error) {
