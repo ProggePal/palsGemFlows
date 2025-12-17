@@ -4,8 +4,14 @@ go 1.22
 
 require (
 	github.com/posthog/posthog-go v0.0.0-20240327112532-87b23fe11103
+	github.com/spf13/cobra v1.9.1
 	google.golang.org/api v0.213.0
 	gopkg.in/yaml.v3 v3.0.1
+)
+
+require (
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 )
 
 require (
