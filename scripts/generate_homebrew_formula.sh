@@ -58,20 +58,21 @@ class PalsGemflows < Formula
   desc "Run pre-made AI workflows from YAML recipes"
   homepage "https://github.com/$repo"
   version "${filever#v}"
-  license "MIT" if respond_to?(:license)
+
+  base = "https://github.com/$repo/releases/download/$tag/"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/$repo/releases/download/$tag/pals-gemflows_${filever}_darwin_arm64.zip"
+      url base + "pals-gemflows_${filever}_darwin_arm64.zip"
       sha256 "$sha_darwin_arm64"
     else
-      url "https://github.com/$repo/releases/download/$tag/pals-gemflows_${filever}_darwin_amd64.zip"
+      url base + "pals-gemflows_${filever}_darwin_amd64.zip"
       sha256 "$sha_darwin_amd64"
     end
   end
 
   on_linux do
-    url "https://github.com/$repo/releases/download/$tag/pals-gemflows_${filever}_linux_amd64.zip"
+    url base + "pals-gemflows_${filever}_linux_amd64.zip"
     sha256 "$sha_linux_amd64"
   end
 

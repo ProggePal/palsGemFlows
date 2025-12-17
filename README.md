@@ -219,8 +219,7 @@ GOOS=linux GOARCH=amd64 ./scripts/package.sh
 This lets teammates install/update with Homebrew:
 
 ```bash
-brew tap ProggePal/palsgemflows
-brew install pals-gemflows
+brew install ProggePal/homebrew-palsgemflows/pals-gemflows
 ```
 
 ### Maintainers: how to publish a new version
@@ -241,3 +240,5 @@ VERSION=v0.1.0 ./scripts/generate_homebrew_formula.sh > pals-gemflows.rb
 ```
 
 4) In the tap repo, commit it as `Formula/pals-gemflows.rb`.
+
+Tip (from Homebrew docs): use `brew tap-new` to create the tap locally, then push it to GitHub. Homebrew recommends naming the repository starting with `homebrew-` so `brew tap` works nicely.
